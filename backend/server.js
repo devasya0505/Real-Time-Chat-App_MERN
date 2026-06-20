@@ -15,12 +15,27 @@ connectDB();
 
 const app = express();
 
-// Middlewares
-app.use(cors({
-  origin: 'https://devvconnectt.vercel.app/', // For development flexibility
+// Allowed Origins for CORS (Development + Production Vercel App)
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://devvconnectt.vercel.app',
+  'https://devvconnectt.vercel.app/'
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes(origin + '/')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
-}));
+};
+
+// Middlewares
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Create HTTP Server
@@ -29,7 +44,13 @@ const server = http.createServer(app);
 // Initialize Socket.io Server
 const io = new Server(server, {
   cors: {
-    origin: 'https://devvconnectt.vercel.app/',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes(origin + '/')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'POST'],
     credentials: true
   }
