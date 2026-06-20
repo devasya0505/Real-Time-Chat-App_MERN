@@ -17,7 +17,7 @@ const app = express();
 
 // Middlewares
 app.use(cors({
-  origin: '*', // For development flexibility
+  origin: 'https://devvconnectt.vercel.app/', // For development flexibility
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
@@ -29,7 +29,7 @@ const server = http.createServer(app);
 // Initialize Socket.io Server
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: 'https://devvconnectt.vercel.app/',
     methods: ['GET', 'POST'],
     credentials: true
   }
