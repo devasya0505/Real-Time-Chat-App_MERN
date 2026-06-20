@@ -23,6 +23,7 @@ const ChatDashboard = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDesc, setNewRoomDesc] = useState('');
+  const [isRoomPrivate, setIsRoomPrivate] = useState(false);
   const [modalError, setModalError] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true); // Responsive mobile toggle
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -310,6 +311,17 @@ const ChatDashboard = () => {
           if (!isParticipant) return prev;
         }
 
+        // If private channel, ensure user is creator, member, or friend of the creator
+        if (newRoom.isPrivate) {
+          const creatorId = newRoom.createdBy?._id || newRoom.createdBy;
+          const isCreator = creatorId === user._id;
+          const isMember = newRoom.members?.some(
+            (m) => (m._id || m) === user._id
+          );
+          const isFriend = user.friends?.includes(creatorId);
+          if (!isCreator && !isMember && !isFriend) return prev;
+        }
+
         return [newRoom, ...prev];
       });
     };
@@ -527,7 +539,11 @@ const ChatDashboard = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user.token}`
         },
-        body: JSON.stringify({ name: newRoomName.trim(), description: newRoomDesc.trim() })
+        body: JSON.stringify({ 
+          name: newRoomName.trim(), 
+          description: newRoomDesc.trim(),
+          isPrivate: isRoomPrivate
+        })
       });
 
       const data = await res.json();
@@ -539,6 +555,7 @@ const ChatDashboard = () => {
       setActiveRoom(data);
       setNewRoomName('');
       setNewRoomDesc('');
+      setIsRoomPrivate(false);
       setShowCreateModal(false);
     } catch (err) {
       setModalError(err.message);
@@ -1458,6 +1475,32 @@ const ChatDashboard = () => {
                 />
               </div>
 
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label className="form-label">Channel Privacy</label>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '4px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    <input
+                      type="radio"
+                      name="channelPrivacy"
+                      checked={!isRoomPrivate}
+                      onChange={() => setIsRoomPrivate(false)}
+                      style={{ accentColor: 'var(--color-primary)' }}
+                    />
+                    <span>Public (everyone can see)</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    <input
+                      type="radio"
+                      name="channelPrivacy"
+                      checked={isRoomPrivate}
+                      onChange={() => setIsRoomPrivate(true)}
+                      style={{ accentColor: 'var(--color-primary)' }}
+                    />
+                    <span>Private (only friends can see)</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="modal-actions">
                 <button 
                   type="button" 
@@ -1466,6 +1509,7 @@ const ChatDashboard = () => {
                     setShowCreateModal(false);
                     setNewRoomName('');
                     setNewRoomDesc('');
+                    setIsRoomPrivate(false);
                     setModalError('');
                   }}
                 >

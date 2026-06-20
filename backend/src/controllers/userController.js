@@ -368,7 +368,7 @@ const deleteAccount = async (req, res) => {
 
     // 4. Remove user from members list in all group rooms
     await Room.updateMany(
-      { isDM: false, members: userId },
+      { isDM: { $ne: true }, members: userId },
       { $pull: { members: userId } }
     );
 

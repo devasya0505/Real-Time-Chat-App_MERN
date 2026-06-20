@@ -46,6 +46,7 @@ const registerUser = async (req, res) => {
         username: user.username,
         email: user.email,
         status: user.status,
+        friends: user.friends || [],
         token: generateToken(user._id)
       });
     } else {
@@ -95,6 +96,7 @@ const loginUser = async (req, res) => {
       username: user.username,
       email: user.email,
       status: user.status,
+      friends: user.friends || [],
       token: generateToken(user._id)
     });
   } catch (error) {

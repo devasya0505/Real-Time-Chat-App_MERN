@@ -6,7 +6,7 @@ const Message = require('../models/Message');
 // @access  Private
 const createRoom = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, isPrivate } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Room name is required' });
@@ -22,7 +22,8 @@ const createRoom = async (req, res) => {
       name,
       description: description || '',
       createdBy: req.user._id,
-      members: [req.user._id]
+      members: [req.user._id],
+      isPrivate: !!isPrivate
     });
 
     const populatedRoom = await Room.findById(room._id).populate('createdBy', 'username');
@@ -44,9 +45,25 @@ const createRoom = async (req, res) => {
 // @access  Private
 const getRooms = async (req, res) => {
   try {
+    const userFriends = req.user.friends || [];
+
     const rooms = await Room.find({
       $or: [
-        { isDM: false },
+        // Public channels: not a DM, and isPrivate is not true (false or undefined)
+        { isDM: { $ne: true }, isPrivate: { $ne: true } },
+        
+        // Private channels: not a DM, isPrivate is true, and creator is friend, creator is user, or user is a member
+        {
+          isDM: { $ne: true },
+          isPrivate: true,
+          $or: [
+            { createdBy: req.user._id },
+            { members: req.user._id },
+            { createdBy: { $in: userFriends } }
+          ]
+        },
+        
+        // DM rooms: current user must be a member
         { isDM: true, members: req.user._id }
       ]
     })
