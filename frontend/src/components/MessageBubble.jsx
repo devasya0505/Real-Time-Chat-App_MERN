@@ -153,7 +153,7 @@ const MessageBubble = ({ message, currentUser, onToggleReaction, isDM, onInspect
         {/* Time Stamp and Ticks */}
         <div className="message-meta-container">
           <span className="message-time-text">
-            {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
           </span>
           {isOutgoing && (
             <span className={`message-ticks ${message.status || 'sent'}`} title={message.status || 'sent'}>

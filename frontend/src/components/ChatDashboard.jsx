@@ -1296,7 +1296,7 @@ const ChatDashboard = () => {
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
                       {presenceUser.status === 'online' 
                         ? 'online' 
-                        : `Last active ${new Date(presenceUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                        : `Last active ${new Date(presenceUser.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`
                       }
                     </span>
                   </div>
