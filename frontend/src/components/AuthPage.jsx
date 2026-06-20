@@ -3,6 +3,16 @@ import { useAuth } from '../context/AuthContext';
 import { MessageSquare, Lock, User, AlertCircle, Mail, Eye, EyeOff } from 'lucide-react';
 
 const AuthPage = () => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { login, register, error, setError } = useAuth();
+  const [localError, setLocalError] = useState('');
+
   useEffect(() => {
     document.body.classList.add('auth-body');
     if (isLogin) {
@@ -16,16 +26,6 @@ const AuthPage = () => {
       document.body.classList.remove('auth-body', 'auth-login', 'auth-register');
     };
   }, [isLogin]);
-
-  const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, register, error, setError } = useAuth();
-  const [localError, setLocalError] = useState('');
 
   const getPasswordStrength = (pwd) => {
     if (!pwd) return { score: 0, label: '', color: '' };
