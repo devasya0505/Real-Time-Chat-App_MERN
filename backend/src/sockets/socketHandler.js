@@ -47,39 +47,7 @@ const initializeSocket = (io) => {
     }
     activeConnections.get(userId).add(socket.id);
 
-    // If it's the user's first active socket tab, set status to online and notify friends only
-    if (activeConnections.get(userId).size === 1) {
-      try {
-        await User.findByIdAndUpdate(userId, { status: 'online' });
-        
-        // Fetch friends list to push online notification
-        const dbUser = await User.findById(userId).populate('friends', '_id');
-        const friends = dbUser.friends || [];
-        
-        friends.forEach((friend) => {
-          io.to(`user_${friend._id.toString()}`).emit('user_status_changed', {
-            userId,
-            username,
-            status: 'online',
-            lastSeen: new Date()
-          });
-        });
 
-        // Mark incoming messages as delivered in all DM rooms
-        const myRooms = await Room.find({ isDM: true, members: userId });
-        for (const r of myRooms) {
-          const result = await Message.updateMany(
-            { room: r._id, sender: { $ne: userId }, status: 'sent' },
-            { $set: { status: 'delivered' } }
-          );
-          if (result.modifiedCount > 0) {
-            io.to(r._id.toString()).emit('messages_delivered', { roomId: r._id.toString(), deliveredTo: userId });
-          }
-        }
-      } catch (error) {
-        console.error('Error setting user online:', error);
-      }
-    }
 
     // Send active friends list to the newly connected user (restricted to mutual friends)
     socket.on('get_active_users', async () => {
@@ -94,8 +62,12 @@ const initializeSocket = (io) => {
     // Room events
     socket.on('join_room', async ({ roomId }) => {
       try {
+        console.log(`Backend: join_room event received for room ${roomId} from socket ${socket.id}`);
         const room = await Room.findById(roomId);
-        if (!room) return;
+        if (!room) {
+          console.log(`Backend: Room ${roomId} not found in database`);
+          return;
+        }
 
         // Security check for private channels
         if (room.isPrivate && !room.isDM) {
@@ -245,6 +217,7 @@ const initializeSocket = (io) => {
 
     // Typing indicators
     socket.on('typing', ({ roomId }) => {
+      console.log(`Backend: User ${username} is typing in room ${roomId}`);
       socket.to(roomId).emit('user_typing', {
         userId,
         username,
@@ -253,6 +226,7 @@ const initializeSocket = (io) => {
     });
 
     socket.on('stop_typing', ({ roomId }) => {
+      console.log(`Backend: User ${username} stopped typing in room ${roomId}`);
       socket.to(roomId).emit('user_stop_typing', {
         userId,
         username,
@@ -296,6 +270,40 @@ const initializeSocket = (io) => {
         }
       }
     });
+
+    // If it's the user's first active socket tab, set status to online and notify friends only
+    if (activeConnections.get(userId).size === 1) {
+      try {
+        await User.findByIdAndUpdate(userId, { status: 'online' });
+        
+        // Fetch friends list to push online notification
+        const dbUser = await User.findById(userId).populate('friends', '_id');
+        const friends = dbUser.friends || [];
+        
+        friends.forEach((friend) => {
+          io.to(`user_${friend._id.toString()}`).emit('user_status_changed', {
+            userId,
+            username,
+            status: 'online',
+            lastSeen: new Date()
+          });
+        });
+
+        // Mark incoming messages as delivered in all DM rooms
+        const myRooms = await Room.find({ isDM: true, members: userId });
+        for (const r of myRooms) {
+          const result = await Message.updateMany(
+            { room: r._id, sender: { $ne: userId }, status: 'sent' },
+            { $set: { status: 'delivered' } }
+          );
+          if (result.modifiedCount > 0) {
+            io.to(r._id.toString()).emit('messages_delivered', { roomId: r._id.toString(), deliveredTo: userId });
+          }
+        }
+      } catch (error) {
+        console.error('Error setting user online:', error);
+      }
+    }
   });
 };
 

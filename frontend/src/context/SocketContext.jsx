@@ -69,6 +69,7 @@ export const SocketProvider = ({ children }) => {
 
     // Listen for typing events
     socketInstance.on('user_typing', ({ roomId, username }) => {
+      console.log(`Frontend: Received user_typing from ${username} in room ${roomId}`);
       setTypingUsers((prev) => {
         const roomTyping = { ...(prev[roomId] || {}) };
         roomTyping[username] = true;
@@ -77,6 +78,7 @@ export const SocketProvider = ({ children }) => {
     });
 
     socketInstance.on('user_stop_typing', ({ roomId, username }) => {
+      console.log(`Frontend: Received user_stop_typing from ${username} in room ${roomId}`);
       setTypingUsers((prev) => {
         const roomTyping = { ...(prev[roomId] || {}) };
         delete roomTyping[username];
