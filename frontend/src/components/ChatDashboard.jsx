@@ -82,6 +82,12 @@ const ChatDashboard = () => {
   const [showKickedModal, setShowKickedModal] = useState(false);
   const [kickedChannelName, setKickedChannelName] = useState('');
 
+  // Invite Friend States (v10)
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteFriends, setInviteFriends] = useState([]);
+  const [loadingInviteFriends, setLoadingInviteFriends] = useState(false);
+  const [inviteError, setInviteError] = useState('');
+
   const feedRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
@@ -408,6 +414,23 @@ const ChatDashboard = () => {
       }
     };
 
+    const handleMemberAdded = ({ roomId, memberId, room }) => {
+      if (memberId === user._id) {
+        setRooms((prev) => {
+          if (prev.some((r) => r._id === roomId)) return prev;
+          return [room, ...prev];
+        });
+        playSynthSound('received');
+      } else {
+        setRooms((prev) =>
+          prev.map((r) => (r._id === roomId ? room : r))
+        );
+        if (activeRoom && activeRoom._id === roomId) {
+          setActiveRoom(room);
+        }
+      }
+    };
+
     const handleUserDeleted = ({ userId }) => {
       if (userId === user._id) {
         logout();
@@ -446,6 +469,7 @@ const ChatDashboard = () => {
     socket.on('friend_removed', handleFriendRemoved);
     socket.on('room_deleted', handleRoomDeleted);
     socket.on('member_removed', handleMemberRemoved);
+    socket.on('member_added', handleMemberAdded);
     socket.on('user_deleted', handleUserDeleted);
     socket.on('incoming_message_alert', handleIncomingMessageAlert);
 
@@ -460,6 +484,7 @@ const ChatDashboard = () => {
       socket.off('friend_removed', handleFriendRemoved);
       socket.off('room_deleted', handleRoomDeleted);
       socket.off('member_removed', handleMemberRemoved);
+      socket.off('member_added', handleMemberAdded);
       socket.off('user_deleted', handleUserDeleted);
       socket.off('incoming_message_alert', handleIncomingMessageAlert);
     };
@@ -884,6 +909,61 @@ const ChatDashboard = () => {
       }
     } catch (err) {
       console.error('Remove member error:', err);
+    }
+  };
+
+  const handleOpenInviteModal = async () => {
+    setShowInviteModal(true);
+    setLoadingInviteFriends(true);
+    setInviteError('');
+    try {
+      const res = await fetch(`${API_URL}/users/friends`, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Filter out friends who are already members of activeRoom
+        const memberIds = activeRoom?.members?.map(m => m._id || m) || [];
+        const nonMembers = data.filter(f => !memberIds.includes(f._id));
+        setInviteFriends(nonMembers);
+      } else {
+        throw new Error('Failed to load friends');
+      }
+    } catch (err) {
+      setInviteError('Failed to load friends list');
+      console.error(err);
+    } finally {
+      setLoadingInviteFriends(false);
+    }
+  };
+
+  const handleInviteFriend = async (friendId) => {
+    if (!activeRoom) return;
+    setInviteError('');
+    try {
+      const res = await fetch(`${API_URL}/rooms/${activeRoom._id}/members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        },
+        body: JSON.stringify({ memberId: friendId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Update activeRoom and rooms state
+        setActiveRoom(data);
+        setRooms((prev) =>
+          prev.map((r) => (r._id === activeRoom._id ? data : r))
+        );
+        // Remove from local invite list
+        setInviteFriends((prev) => prev.filter((f) => f._id !== friendId));
+      } else {
+        setInviteError(data.message || 'Failed to invite friend');
+      }
+    } catch (err) {
+      setInviteError('Failed to invite friend');
+      console.error(err);
     }
   };
 
@@ -1363,6 +1443,23 @@ const ChatDashboard = () => {
                       &times;
                     </button>
                   </div>
+                  {(activeRoom.createdBy?._id === user._id || activeRoom.createdBy === user._id) && (
+                    <button 
+                      className="btn-primary" 
+                      style={{ 
+                        margin: '12px 16px', 
+                        justifyContent: 'center', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px',
+                        fontSize: '0.85rem',
+                        padding: '10px 14px' 
+                      }}
+                      onClick={handleOpenInviteModal}
+                    >
+                      <Plus size={16} /> Invite Friend
+                    </button>
+                  )}
                   <div className="members-list">
                     {activeRoom.members?.map((member) => {
                       const isOnline = member.status === 'online';
@@ -1936,6 +2033,107 @@ const ChatDashboard = () => {
                 }}
               >
                 Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Friend Modal Overlay (v10) */}
+      {showInviteModal && activeRoom && (
+        <div className="modal-overlay" style={{ zIndex: 1010 }}>
+          <div className="modal-content glass-panel" style={{ maxWidth: '420px', width: '90%', padding: '28px' }}>
+            <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h2 className="modal-title" style={{ margin: 0 }}>Invite Friend</h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>Add a friend to #{activeRoom.name}</p>
+              </div>
+              <button 
+                className="btn-icon" 
+                style={{ width: '28px', height: '28px', fontSize: '1.2rem', margin: 0 }}
+                onClick={() => {
+                  setShowInviteModal(false);
+                  setInviteFriends([]);
+                  setInviteError('');
+                }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {inviteError && (
+              <div className="auth-error" style={{ marginBottom: '16px' }}>
+                <span>{inviteError}</span>
+              </div>
+            )}
+
+            {loadingInviteFriends ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
+                <Loader2 className="animate-spin" size={24} />
+              </div>
+            ) : inviteFriends.length === 0 ? (
+              <div style={{ 
+                padding: '30px 20px', 
+                textAlign: 'center', 
+                color: 'var(--text-muted)', 
+                fontSize: '0.9rem',
+                background: 'rgba(255,255,255,0.01)',
+                borderRadius: '12px',
+                border: '1px dashed var(--border-glass)'
+              }}>
+                No friends available to invite. All your friends are already members, or you have no friends.
+              </div>
+            ) : (
+              <div className="friends-list-container" style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {inviteFriends.map((friend) => {
+                  const isOnline = friend.status === 'online';
+                  return (
+                    <div key={friend._id} className="friend-row-item" style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 12px',
+                      background: 'var(--bg-bubble-incoming)',
+                      borderRadius: '10px',
+                      border: '1px solid var(--border-glass)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="avatar-container">
+                          <div className="user-avatar" style={{ width: '32px', height: '32px', fontSize: '0.8rem' }}>
+                            {friend.username.substring(0, 2)}
+                          </div>
+                          <span className={`status-dot ${isOnline ? 'online' : 'offline'}`}></span>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{friend.username}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{isOnline ? 'online' : 'offline'}</div>
+                        </div>
+                      </div>
+                      <button 
+                        className="btn-primary" 
+                        style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                        onClick={() => handleInviteFriend(friend._id)}
+                      >
+                        Invite
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            <div className="modal-actions" style={{ marginTop: '24px' }}>
+              <button 
+                type="button" 
+                className="btn-secondary" 
+                style={{ width: '100%', justifyContent: 'center' }}
+                onClick={() => {
+                  setShowInviteModal(false);
+                  setInviteFriends([]);
+                  setInviteError('');
+                }}
+              >
+                Close
               </button>
             </div>
           </div>

@@ -93,35 +93,47 @@ const initializeSocket = (io) => {
 
     // Room events
     socket.on('join_room', async ({ roomId }) => {
-      socket.join(roomId);
-      socket.currentRoom = roomId; // Track current room
-      console.log(`Socket ${socket.id} joined room ${roomId}`);
-
-      // Mark incoming messages as read in this DM room, or enroll user in group channel
       try {
         const room = await Room.findById(roomId);
-        if (room) {
-          if (room.isDM) {
-            await Message.updateMany(
-              { room: roomId, sender: { $ne: userId }, status: { $ne: 'read' } },
-              { $set: { status: 'read' } }
-            );
-            // Broadcast read event to the room
-            io.to(roomId).emit('messages_read', { roomId, readBy: userId });
-          } else {
-            // Group channel: if user is not in members list, add them
-            if (!room.members.includes(socket.user._id)) {
-              room.members.push(socket.user._id);
-              await room.save();
-              const populatedRoom = await Room.findById(room._id)
-                .populate('createdBy', 'username')
-                .populate('members', 'username status lastSeen');
-              io.emit('room_created', populatedRoom); // Updates all clients with members list sync
-            }
+        if (!room) return;
+
+        // Security check for private channels
+        if (room.isPrivate && !room.isDM) {
+          const creatorId = room.createdBy.toString();
+          const isCreator = creatorId === userId;
+          const isFriend = socket.user.friends?.some(fId => fId.toString() === creatorId);
+          const isMember = room.members?.some(mId => mId.toString() === userId);
+          if (!isCreator && !(isFriend && isMember)) {
+            console.log(`Socket join unauthorized for private room ${roomId}`);
+            return;
+          }
+        }
+
+        socket.join(roomId);
+        socket.currentRoom = roomId; // Track current room
+        console.log(`Socket ${socket.id} joined room ${roomId}`);
+
+        // Mark incoming messages as read in this DM room, or enroll user in group channel
+        if (room.isDM) {
+          await Message.updateMany(
+            { room: roomId, sender: { $ne: userId }, status: { $ne: 'read' } },
+            { $set: { status: 'read' } }
+          );
+          // Broadcast read event to the room
+          io.to(roomId).emit('messages_read', { roomId, readBy: userId });
+        } else {
+          // Group channel: if user is not in members list, add them
+          if (!room.members.includes(socket.user._id)) {
+            room.members.push(socket.user._id);
+            await room.save();
+            const populatedRoom = await Room.findById(room._id)
+              .populate('createdBy', 'username')
+              .populate('members', 'username status lastSeen');
+            io.emit('room_created', populatedRoom); // Updates all clients with members list sync
           }
         }
       } catch (err) {
-        console.error('Join room read update error:', err);
+        console.error('Join room error:', err);
       }
     });
 
