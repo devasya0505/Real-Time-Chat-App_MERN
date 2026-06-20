@@ -995,8 +995,7 @@ const ChatDashboard = () => {
     }
   };
 
-  const totalUnread = rooms.reduce((acc, r) => acc + (r.isDM ? (r.unreadCount || 0) : 0), 0);
-  const notificationsCount = totalUnread + friendRequests.length;
+  const unreadChatsCount = rooms.filter(r => r.isDM && r.unreadCount > 0).length;
 
   return (
     <div className="app-container glass-panel">
@@ -1124,9 +1123,9 @@ const ChatDashboard = () => {
             title="Direct Chats"
           >
             <MessageCircle size={16} /> Chats
-            {notificationsCount > 0 && (
+            {unreadChatsCount > 0 && (
               <span className="notification-badge" style={{ position: 'static', marginLeft: '6px', width: '16px', height: '16px', fontSize: '0.65rem', border: 'none' }}>
-                {notificationsCount}
+                {unreadChatsCount}
               </span>
             )}
           </button>

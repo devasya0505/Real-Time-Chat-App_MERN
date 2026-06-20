@@ -1007,7 +1007,7 @@ body.auth-body #root {
 /* Welcome Blank State */
 .welcome-logo {
   border-radius: 50%;
-  background: #16181c;
+  background: var(--bg-card);
   color: var(--text-main);
   box-shadow: none;
   margin-bottom: 8px;
@@ -1130,7 +1130,7 @@ body.auth-body #root {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: #16181c;
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
