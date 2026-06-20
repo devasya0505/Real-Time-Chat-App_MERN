@@ -21,7 +21,8 @@ const createRoom = async (req, res) => {
     const room = await Room.create({
       name,
       description: description || '',
-      createdBy: req.user._id
+      createdBy: req.user._id,
+      members: [req.user._id]
     });
 
     const populatedRoom = await Room.findById(room._id).populate('createdBy', 'username');

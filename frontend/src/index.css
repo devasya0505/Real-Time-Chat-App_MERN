@@ -568,7 +568,7 @@ body {
   display: flex;
   flex-grow: 1;
   overflow: hidden;
-  height: 100%;
+  min-height: 0;
 }
 
 .chat-feed-container {
@@ -576,7 +576,7 @@ body {
   flex-direction: column;
   flex-grow: 1;
   overflow: hidden;
-  height: 100%;
+  min-height: 0;
 }
 
 .members-sidebar {
@@ -1221,16 +1221,37 @@ body {
   }
 }
 
+/* Hide header action button text on small mobile screens */
+@media (max-width: 600px) {
+  .btn-text {
+    display: none;
+  }
+  .chat-actions {
+    gap: 6px;
+  }
+  .chat-header {
+    padding: 14px 16px;
+  }
+}
+
 /* Scroll support for taller authentication pages (v7) */
 body.auth-body {
   overflow-y: auto;
   align-items: center;
 }
 
+body.auth-body.auth-login {
+  overflow-y: hidden;
+}
+
 @media (max-width: 480px) {
   body.auth-body {
     align-items: flex-start;
     padding: 20px 10px;
+  }
+  body.auth-body.auth-login {
+    align-items: center;
+    padding: 0;
   }
   .auth-container {
     padding: 20px 16px;

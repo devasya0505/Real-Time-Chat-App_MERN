@@ -1222,8 +1222,9 @@ const ChatDashboard = () => {
                       className={`btn-secondary ${showMembersList ? 'active' : ''}`}
                       style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
                       onClick={() => setShowMembersList(!showMembersList)}
+                      title={`View channel members (${activeRoom.members?.length || 0})`}
                     >
-                      <Users size={14} /> Members ({activeRoom.members?.length || 0})
+                      <Users size={14} /> <span className="btn-text">Members ({activeRoom.members?.length || 0})</span>
                     </button>
                     {(activeRoom.createdBy?._id === user._id || activeRoom.createdBy === user._id) && (
                       <button 
@@ -1232,18 +1233,18 @@ const ChatDashboard = () => {
                         onClick={() => setShowDeleteChannelModal(true)}
                         title="Delete this channel"
                       >
-                        <Trash2 size={14} /> Delete Channel
+                        <Trash2 size={14} /> <span className="btn-text">Delete Channel</span>
                       </button>
                     )}
                   </>
                 )}
                 <button 
                   className="btn-secondary" 
-                  style={{ fontSize: '0.8rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+                  style={{ fontSize: '0.8rem', borderColor: 'var(--color-danger)', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', gap: '4px' }}
                   onClick={() => setActiveRoom(null)}
                   title="Close current chat (Esc)"
                 >
-                  Close Chat
+                  <X size={14} /> <span className="btn-text">Close Chat</span>
                 </button>
               </div>
             </header>

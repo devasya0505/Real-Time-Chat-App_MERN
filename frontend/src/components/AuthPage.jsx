@@ -5,10 +5,17 @@ import { MessageSquare, Lock, User, AlertCircle, Mail, Eye, EyeOff } from 'lucid
 const AuthPage = () => {
   useEffect(() => {
     document.body.classList.add('auth-body');
+    if (isLogin) {
+      document.body.classList.add('auth-login');
+      document.body.classList.remove('auth-register');
+    } else {
+      document.body.classList.add('auth-register');
+      document.body.classList.remove('auth-login');
+    }
     return () => {
-      document.body.classList.remove('auth-body');
+      document.body.classList.remove('auth-body', 'auth-login', 'auth-register');
     };
-  }, []);
+  }, [isLogin]);
 
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
