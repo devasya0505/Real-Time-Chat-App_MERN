@@ -1289,3 +1289,56 @@ body.light-theme .message-wrapper.outgoing .message-ticks.delivered {
 body.light-theme .message-wrapper.outgoing .message-ticks.read {
   color: #ffffff; /* Contrast white read ticks on light blue bubble */
 }
+
+/* Spinner Animation & loading overlay styles (v10.2) */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-app);
+  z-index: 9999;
+}
+
+.loading-card {
+  width: 80px;
+  height: 80px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Modal Actions Alignments (v10.3) */
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.modal-actions button {
+  flex: 1;
+  justify-content: center;
+}

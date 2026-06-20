@@ -91,6 +91,7 @@ const ChatDashboard = () => {
   const feedRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
+  const hasPushedStateRef = useRef(false);
 
   // Web Audio synth player for sound indicators (zero-dependency, native audio)
   const playSynthSound = (type) => {
@@ -174,6 +175,33 @@ const ChatDashboard = () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  // Handle mobile device back button interception to close active chat (v10.3)
+  useEffect(() => {
+    if (activeRoom) {
+      if (!hasPushedStateRef.current) {
+        window.history.pushState({ roomActive: true }, '');
+        hasPushedStateRef.current = true;
+      }
+    } else {
+      if (hasPushedStateRef.current) {
+        hasPushedStateRef.current = false;
+        window.history.back();
+      }
+    }
+
+    const handlePopState = (e) => {
+      if (activeRoom) {
+        setActiveRoom(null);
+        hasPushedStateRef.current = false;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [activeRoom]);
 
   // Fetch friends list on profile settings modal open (v5)
   useEffect(() => {

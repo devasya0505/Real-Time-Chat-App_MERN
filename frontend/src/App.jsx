@@ -11,9 +11,10 @@ const AppContent = () => {
 
   if (loading) {
     return (
-      <div className="glass-panel" style={{ padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-        <Loader2 size={36} className="animate-spin" style={{ color: 'var(--color-secondary)' }} />
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Loading DevConnect Workspace...</h2>
+      <div className="loading-container">
+        <div className="loading-card">
+          <Loader2 size={28} className="animate-spin" style={{ color: 'var(--color-primary)' }} />
+        </div>
       </div>
     );
   }
